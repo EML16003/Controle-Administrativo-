@@ -1,0 +1,29 @@
+CONTROLE ADMINISTRATIVO — VERSÃO INICIAL
+
+CONTEÚDO
+- index.html: programa
+- manifest.webmanifest e sw.js: suporte PWA/offline após publicação em HTTPS
+
+COMO TESTAR NO COMPUTADOR
+1. Extraia o ZIP.
+2. Abra index.html no navegador.
+3. Cadastre registros de teste.
+4. Em Backup e dados, baixe um backup JSON.
+
+IMPORTANTE SOBRE OFFLINE
+- A versão aberta diretamente como arquivo funciona com Local Storage, mas o modo PWA/offline confiável exige publicação em HTTPS.
+- Para testar offline após publicar: abra o endereço uma vez com internet, aguarde carregar, depois desligue a internet e reabra.
+- O armazenamento fica no navegador/dispositivo. Não há sincronização entre usuários ou dispositivos nesta versão.
+- Não limpe os dados do navegador sem exportar backup.
+
+PUBLICAÇÃO RECOMENDADA
+- Publique os arquivos em GitHub Pages ou outro serviço de hospedagem estática HTTPS.
+- Google Drive pode guardar os backups JSON, mas não hospeda o app como um site PWA nem sincroniza o Local Storage.
+- Para uso compartilhado pelas aprendizes, será necessária a próxima etapa: autenticação, banco de dados em nuvem, permissões por perfil e sincronização com tratamento de conflitos.
+
+LIMITAÇÕES DA VERSÃO INICIAL
+- Não enviar notificações push; aniversários próximos aparecem no painel quando o programa é aberto.
+- Cálculo de horas extras é estimativo e depende do valor-hora, adicional e regras aprovadas pela empresa/RH.
+- Horários que atravessam meia-noite ainda não são calculados.
+- Almoxarifado considera saída/liberação como baixa de estoque; aplicação é registrada como histórico/uso, sem segunda baixa.
+- Não use dados pessoais sensíveis reais até implantar controle de acesso e segurança adequados.

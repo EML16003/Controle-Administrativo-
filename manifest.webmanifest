@@ -1,0 +1,10 @@
+{
+  "name": "Controle Administrativo",
+  "short_name": "Controle",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f3f6fa",
+  "theme_color": "#173b5e",
+  "description": "Controle administrativo operacional com uso offline",
+  "icons": []
+}

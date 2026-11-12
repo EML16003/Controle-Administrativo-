@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#173b5e">
+<meta name="description" content="Controle administrativo operacional offline">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Controle Administrativo</title>
+<style>
+:root{--navy:#173b5e;--blue:#23649a;--bg:#f3f6fa;--card:#fff;--ink:#172334;--muted:#667589;--line:#dce4ed;--green:#147d50;--orange:#a45b08;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+header{background:var(--navy);color:white;padding:16px max(16px,env(safe-area-inset-left));position:sticky;top:0;z-index:5;box-shadow:0 2px 10px #102b4422}
+.head{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:750;font-size:18px}.status{font-size:12px;padding:5px 9px;border-radius:20px;background:#ffffff22}
+.wrap{max-width:1200px;margin:18px auto;padding:0 14px 40px}.tabs{display:flex;gap:7px;overflow:auto;padding:4px 0 12px;scrollbar-width:thin}.tab{border:1px solid var(--line);background:white;color:var(--ink);padding:10px 13px;border-radius:10px;white-space:nowrap;font-weight:650}.tab.active{background:var(--blue);color:white;border-color:var(--blue)}
+h1{font-size:23px;margin:8px 0 4px}h2{font-size:18px;margin:0 0 12px}h3{font-size:15px;margin:0 0 8px}.muted{color:var(--muted);font-size:13px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;box-shadow:0 2px 8px #1c355008;margin-bottom:12px}.metric{font-size:26px;font-weight:750;margin-top:5px}.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.field{display:flex;flex-direction:column;gap:5px}.field.full{grid-column:1/-1}label{font-size:13px;font-weight:650;color:#39485b}input,select,textarea{width:100%;padding:11px 12px;border:1px solid #cbd6e2;border-radius:9px;background:white;color:var(--ink);font:inherit;min-height:42px}textarea{min-height:76px;resize:vertical}button{border:0;border-radius:9px;padding:10px 14px;font:650 14px system-ui;cursor:pointer;background:var(--blue);color:white}.secondary{background:#e8eef5;color:#23384f}.danger{background:#fce8e7;color:var(--red)}.success{background:#e3f5ec;color:var(--green)}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:620px}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}th{color:#526276;background:#f8fafc}.pill{display:inline-block;padding:3px 8px;border-radius:20px;background:#edf2f7;font-size:12px}.pill.ok{background:#e3f5ec;color:var(--green)}.pill.wait{background:#fff2dc;color:var(--orange)}.pill.bad{background:#fce8e7;color:var(--red)}.hidden{display:none!important}.notice{padding:10px 12px;background:#fff7e8;border:1px solid #f1d8a8;border-radius:10px;color:#70420c;font-size:13px;margin:12px 0}.empty{padding:18px;text-align:center;color:var(--muted)}footer{text-align:center;color:var(--muted);font-size:12px;padding:18px}
+@media(max-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:1fr}.wrap{margin:10px auto}.metric{font-size:22px}.card{padding:13px}.head{align-items:flex-start}.brand{font-size:16px}}
+@media(max-width:420px){.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}.grid{gap:8px}.metric{font-size:20px}}
+</style>
+</head>
+<body>
+<header><div class="head"><div><div class="brand">▦ Controle Administrativo</div><div style="font-size:12px;opacity:.8">Versão inicial • registros locais</div></div><span id="net" class="status">Verificando conexão…</span></div></header>
+<main class="wrap">
+<div class="notice"><b>Atenção:</b> esta primeira versão salva os dados neste navegador/dispositivo. Ainda não compartilha automaticamente dados com outros usuários nem sincroniza com a nuvem. Faça backups frequentes em <b>Backup e dados</b>.</div>
+<nav class="tabs" id="tabs">
+<button class="tab active" data-page="painel">Painel</button><button class="tab" data-page="compras">Cotações e pedidos</button><button class="tab" data-page="diesel">Diesel</button><button class="tab" data-page="cozinha">Cozinha</button><button class="tab" data-page="almox">Almoxarifado</button><button class="tab" data-page="pessoal">Pessoal e horas</button><button class="tab" data-page="backup">Backup e dados</button>
+</nav>
+<section id="painel" class="page">
+<h1>Painel de acompanhamento</h1><p class="muted">Visão rápida das atividades registradas neste dispositivo.</p>
+<div class="grid">
+<div class="card"><div class="muted">Cotações/pedidos abertos</div><div class="metric" id="mCompras">0</div></div>
+<div class="card"><div class="muted">Registros de diesel</div><div class="metric" id="mDiesel">0</div></div>
+<div class="card"><div class="muted">Movimentos de estoque</div><div class="metric" id="mEstoque">0</div></div>
+<div class="card"><div class="muted">Colaboradores</div><div class="metric" id="mPessoal">0</div></div>
+</div>
+<div class="card"><h2>Pendências para acompanhar</h2><div id="pendencias" class="empty">Nenhuma pendência registrada.</div></div>
+<div class="card"><h2>Aniversários próximos</h2><div id="aniversarios" class="empty">Cadastre colaboradores com data de nascimento.</div></div>
+</section>
+<section id="compras" class="page hidden">
+<h1>Cotações e pedidos</h1><p class="muted">Registre solicitações recebidas, fornecedores, andamento e entrega.</p>
+<div class="card"><h2>Nova solicitação / cotação</h2><form id="fCompra" class="formgrid">
+<div class="field"><label>Solicitante *</label><input name="solicitante" required></div><div class="field"><label>Setor / oficina</label><input name="setor"></div>
+<div class="field"><label>Data da solicitação *</label><input name="data" type="date" required></div><div class="field"><label>Prazo desejado</label><input name="prazo" type="date"></div>
+<div class="field full"><label>Material ou serviço *</label><input name="item" required></div><div class="field"><label>Quantidade</label><input name="quantidade" placeholder="Ex.: 2 unidades"></div>
+<div class="field"><label>Fornecedor / cotado com</label><input name="fornecedor"></div><div class="field"><label>Valor estimado (R$)</label><input name="valor" type="number" min="0" step="0.01"></div>
+<div class="field"><label>Status</label><select name="status"><option>Solicitado</option><option>Em cotação</option><option>Aguardando aprovação</option><option>Pedido realizado</option><option>Entrega parcial</option><option>Entregue</option><option>Cancelado</option></select></div>
+<div class="field full"><label>Observações / próxima ação</label><textarea name="obs"></textarea></div>
+<div class="field full"><button>Salvar solicitação</button></div></form></div>
+<div class="card"><h2>Registros de compras</h2><div class="tablewrap" id="tCompras"></div></div>
+</section>
+<section id="diesel" class="page hidden">
+<h1>Controle de diesel</h1><p class="muted">Lance recebimentos e abastecimentos. O saldo é calculado pelos movimentos cadastrados.</p>
+<div class="card"><h2>Novo movimento</h2><form id="fDiesel" class="formgrid">
+<div class="field"><label>Data *</label><input name="data" type="date" required></div><div class="field"><label>Tipo *</label><select name="tipo"><option value="entrada">Recebimento / entrada</option><option value="saida">Abastecimento / saída</option></select></div>
+<div class="field"><label>Quantidade (litros) *</label><input name="litros" type="number" min="0.01" step="0.01" required></div><div class="field"><label>Equipamento / veículo</label><input name="equipamento"></div>
+<div class="field"><label>Responsável</label><input name="responsavel"></div><div class="field"><label>Documento / requisição</label><input name="documento"></div>
+<div class="field full"><label>Observações</label><textarea name="obs"></textarea></div><div class="field full"><button>Registrar movimento</button></div></form></div>
+<div class="grid"><div class="card"><div class="muted">Entradas (L)</div><div class="metric" id="dEntradas">0,00</div></div><div class="card"><div class="muted">Saídas (L)</div><div class="metric" id="dSaidas">0,00</div></div><div class="card"><div class="muted">Saldo calculado (L)</div><div class="metric" id="dSaldo">0,00</div></div><div class="card"><div class="muted">Movimentos</div><div class="metric" id="dMovs">0</div></div></div>
+<div class="card"><h2>Histórico</h2><div class="tablewrap" id="tDiesel"></div></div>
+</section>
+<section id="cozinha" class="page hidden">
+<h1>Consumo da cozinha</h1><p class="muted">Controle entradas e consumo de produtos da cozinha.</p>
+<div class="card"><h2>Novo movimento</h2><form id="fCozinha" class="formgrid">
+<div class="field"><label>Data *</label><input name="data" type="date" required></div><div class="field"><label>Tipo *</label><select name="tipo"><option value="entrada">Entrada / compra</option><option value="saida">Consumo / saída</option></select></div>
+<div class="field"><label>Produto *</label><input name="produto" required></div><div class="field"><label>Quantidade *</label><input name="qtd" type="number" min="0.01" step="0.01" required></div>
+<div class="field"><label>Unidade</label><input name="unidade" placeholder="kg, pacote, litro…"></div><div class="field"><label>Responsável</label><input name="responsavel"></div>
+<div class="field full"><label>Observações</label><textarea name="obs"></textarea></div><div class="field full"><button>Registrar movimento</button></div></form></div>
+<div class="card"><h2>Estoque calculado por produto</h2><div class="tablewrap" id="tCozinha"></div></div>
+<div class="card"><h2>Histórico de movimentos</h2><div class="tablewrap" id="tCozinhaHist"></div></div>
+</section>
+<section id="almox" class="page hidden">
+<h1>Almoxarifado</h1><p class="muted">Registre entrada, saída e aplicação dos itens liberados.</p>
+<div class="card"><h2>Novo movimento</h2><form id="fAlmox" class="formgrid">
+<div class="field"><label>Data *</label><input name="data" type="date" required></div><div class="field"><label>Tipo *</label><select name="tipo"><option value="entrada">Entrada</option><option value="saida">Saída / liberação</option><option value="aplicacao">Aplicação</option></select></div>
+<div class="field"><label>Item *</label><input name="item" required></div><div class="field"><label>Quantidade *</label><input name="qtd" type="number" min="0.01" step="0.01" required></div>
+<div class="field"><label>Unidade</label><input name="unidade" placeholder="un, caixa, kg…"></div><div class="field"><label>Solicitante / responsável</label><input name="responsavel"></div>
+<div class="field full"><label>Onde foi aplicado / finalidade</label><input name="aplicacao"></div><div class="field full"><label>Observações</label><textarea name="obs"></textarea></div>
+<div class="field full"><button>Registrar movimento</button></div></form></div>
+<div class="card"><h2>Saldo por item</h2><div class="tablewrap" id="tAlmoxSaldo"></div></div><div class="card"><h2>Histórico</h2><div class="tablewrap" id="tAlmoxHist"></div></div>
+</section>
+<section id="pessoal" class="page hidden">
+<h1>Pessoal e horas extras</h1><p class="muted">Cadastro básico de colaboradores, aniversários e apuração estimada de horas.</p>
+<div class="card"><h2>Cadastrar colaborador</h2><form id="fPessoa" class="formgrid">
+<div class="field"><label>Nome completo *</label><input name="nome" required></div><div class="field"><label>Setor / função</label><input name="setor"></div>
+<div class="field"><label>Data de nascimento</label><input name="nascimento" type="date"></div><div class="field"><label>Telefone (opcional)</label><input name="telefone"></div>
+<div class="field full"><button>Cadastrar colaborador</button></div></form></div>
+<div class="card"><h2>Registrar hora extra</h2><form id="fHora" class="formgrid">
+<div class="field"><label>Colaborador *</label><select name="pessoa" id="selPessoa" required><option value="">Cadastre um colaborador primeiro</option></select></div><div class="field"><label>Data *</label><input name="data" type="date" required></div>
+<div class="field"><label>Início *</label><input name="inicio" type="time" required></div><div class="field"><label>Fim *</label><input name="fim" type="time" required></div>
+<div class="field"><label>Intervalo (minutos)</label><input name="intervalo" type="number" min="0" value="0"></div><div class="field"><label>Adicional (%)</label><input name="adicional" type="number" min="0" value="50"></div>
+<div class="field"><label>Valor hora normal (R$)</label><input name="valorhora" type="number" min="0" step="0.01" placeholder="Informar valor correto"></div><div class="field"><label>Status</label><select name="status"><option>Para aprovação</option><option>Aprovada</option><option>Recusada</option><option>Paga</option></select></div>
+<div class="field full"><label>Justificativa / atividade executada *</label><textarea name="justificativa" required></textarea></div><div class="field full"><button>Registrar hora extra</button></div></form>
+<div class="notice">O cálculo é estimativo: considera adicional informado e valor-hora preenchido. Não substitui validação do RH/contabilidade, acordo coletivo, divisor aplicável, regras de intervalo ou aprovação da empresa. Para turno que atravessa a meia-noite, informe o horário final como horário do mesmo dia; esta versão inicial não calcula virada de dia.</div></div>
+<div class="grid"><div class="card"><div class="muted">Horas registradas</div><div class="metric" id="hTotal">0,00</div></div><div class="card"><div class="muted">Valor estimado</div><div class="metric" id="hValor">R$ 0,00</div></div><div class="card"><div class="muted">Aguardando aprovação</div><div class="metric" id="hPend">0</div></div><div class="card"><div class="muted">Aniversários próximos</div><div class="metric" id="hAniv">0</div></div></div>
+<div class="card"><h2>Colaboradores</h2><div class="tablewrap" id="tPessoas"></div></div><div class="card"><h2>Banco de horas / valores estimados</h2><div class="tablewrap" id="tHoras"></div></div>
+</section>
+<section id="backup" class="page hidden">
+<h1>Backup e dados</h1><p class="muted">Exporte um arquivo de segurança e guarde-o no Google Drive. O backup contém os dados cadastrados neste navegador.</p>
+<div class="card"><h2>Segurança dos registros</h2><p>Faça backup ao final do expediente e antes de trocar de aparelho, limpar os dados do navegador ou reinstalar o sistema.</p><div class="actions"><button id="exportar">Baixar backup JSON</button><label class="secondary" style="padding:10px 14px;border-radius:9px;cursor:pointer;font-weight:650">Importar backup JSON<input id="importar" type="file" accept=".json,application/json" hidden></label></div></div>
+<div class="card"><h2>Exportar relatórios</h2><p class="muted">Baixe os registros em CSV para abrir no Excel ou Google Planilhas.</p><div class="actions"><button class="secondary" data-csv="compras">Compras</button><button class="secondary" data-csv="diesel">Diesel</button><button class="secondary" data-csv="cozinha">Cozinha</button><button class="secondary" data-csv="almox">Almoxarifado</button><button class="secondary" data-csv="pessoas">Colaboradores</button><button class="secondary" data-csv="horas">Horas extras</button></div></div>
+<div class="card"><h2>Limpar dados locais</h2><p class="muted">Ação irreversível neste navegador. Exporte um backup antes.</p><button class="danger" id="limpar">Apagar todos os dados deste dispositivo</button></div>
+</section>
+<footer>Controle Administrativo • protótipo inicial • mantenha cópias de segurança</footer>
+</main>
+<script>
+const KEY='controle_administrativo_v1';
+const empty={compras:[],diesel:[],cozinha:[],almox:[],pessoas:[],horas:[]};
+let db=load();
+function load(){try{return {...empty,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){return structuredClone(empty)}}
+function save(){localStorage.setItem(KEY,JSON.stringify(db));render()}
+function id(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function val(n){return Number(n||0)}
+function money(n){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0)}
+function num(n){return new Intl.NumberFormat('pt-BR',{maximumFractionDigits:2}).format(n||0)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function formObj(form){return Object.fromEntries(new FormData(form).entries())}
+function table(headers,rows){if(!rows.length)return '<div class="empty">Nenhum registro ainda.</div>';return '<table><thead><tr>'+headers.map(x=>'<th>'+x+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table>'}
+function status(s){let cls=/entregue|aprovada|paga|conclu/i.test(s)?'ok':/recus|cancel/i.test(s)?'bad':'wait';return `<span class="pill ${cls}">${esc(s)}</span>`}
+function rowsFor(arr,fields,delType){return arr.slice().reverse().map(x=>'<tr>'+fields.map(f=>`<td>${esc(f(x))}</td>`).join('')+`<td><button class="danger" data-del="${delType}" data-id="${x.id}">Excluir</button></td></tr>`)}
+function render(){
+ document.getElementById('mCompras').textContent=db.compras.filter(x=>!['Entregue','Cancelado'].includes(x.status)).length;
+ document.getElementById('mDiesel').textContent=db.diesel.length;document.getElementById('mEstoque').textContent=db.almox.length+db.cozinha.length;document.getElementById('mPessoal').textContent=db.pessoas.length;
+ document.getElementById('tCompras').innerHTML=table(['Data','Solicitante','Item','Fornecedor','Valor','Status','Ação'],rowsFor(db.compras,[x=>x.data,x=>x.solicitante,x=>x.item,x=>x.fornecedor||'—',x=>money(val(x.valor)),x=>status(x.status)],'compras'));
+ let ent=db.diesel.filter(x=>x.tipo==='entrada').reduce((a,x)=>a+val(x.litros),0),sai=db.diesel.filter(x=>x.tipo==='saida').reduce((a,x)=>a+val(x.litros),0);
+ ['dEntradas','dSaidas','dSaldo','dMovs'].forEach((k,i)=>document.getElementById(k).textContent=[num(ent),num(sai),num(ent-sai),db.diesel.length][i]);
+ document.getElementById('tDiesel').innerHTML=table(['Data','Tipo','Litros','Equipamento','Responsável','Documento','Ação'],rowsFor(db.diesel,[x=>x.data,x=>x.tipo==='entrada'?'Entrada':'Saída',x=>num(val(x.litros)),x=>x.equipamento,x=>x.responsavel,x=>x.documento],'diesel'));
+ const kitchen={};db.cozinha.forEach(x=>{let k=x.produto.toLowerCase();if(!kitchen[k])kitchen[k]={produto:x.produto,unidade:x.unidade,entrada:0,saida:0};kitchen[k][x.tipo==='entrada'?'entrada':'saida']+=val(x.qtd)});
+ document.getElementById('tCozinha').innerHTML=table(['Produto','Entradas','Consumo','Saldo','Unidade'],Object.values(kitchen).map(x=>`<tr><td>${esc(x.produto)}</td><td>${num(x.entrada)}</td><td>${num(x.saida)}</td><td>${num(x.entrada-x.saida)}</td><td>${esc(x.unidade)}</td></tr>`));
+ document.getElementById('tCozinhaHist').innerHTML=table(['Data','Tipo','Produto','Quantidade','Responsável','Ação'],rowsFor(db.cozinha,[x=>x.data,x=>x.tipo==='entrada'?'Entrada':'Consumo',x=>x.produto,x=>num(val(x.qtd))+' '+(x.unidade||''),x=>x.responsavel],'cozinha'));
+ const stock={};db.almox.forEach(x=>{let k=x.item.toLowerCase();if(!stock[k])stock[k]={item:x.item,unidade:x.unidade,entrada:0,saida:0,aplicacao:0};if(x.tipo==='entrada')stock[k].entrada+=val(x.qtd);else stock[k].saida+=val(x.qtd)});
+ document.getElementById('tAlmoxSaldo').innerHTML=table(['Item','Entradas','Saídas/liberações','Saldo','Unidade'],Object.values(stock).map(x=>`<tr><td>${esc(x.item)}</td><td>${num(x.entrada)}</td><td>${num(x.saida)}</td><td>${num(x.entrada-x.saida)}</td><td>${esc(x.unidade)}</td></tr>`));
+ document.getElementById('tAlmoxHist').innerHTML=table(['Data','Tipo','Item','Quantidade','Responsável','Aplicação','Ação'],rowsFor(db.almox,[x=>x.data,x=>x.tipo,x=>x.item,x=>num(val(x.qtd))+' '+(x.unidade||''),x=>x.responsavel,x=>x.aplicacao],'almox'));
+ document.getElementById('tPessoas').innerHTML=table(['Colaborador','Setor/função','Nascimento','Telefone','Ação'],rowsFor(db.pessoas,[x=>x.nome,x=>x.setor,x=>x.nascimento,x=>x.telefone],'pessoas'));
+ document.getElementById('selPessoa').innerHTML='<option value="">Selecione</option>'+db.pessoas.map(x=>`<option value="${x.id}">${esc(x.nome)}</option>`).join('');
+ let hrs=db.horas.reduce((a,x)=>a+val(x.minutos)/60,0),total=db.horas.reduce((a,x)=>a+val(x.valor),0);
+ document.getElementById('hTotal').textContent=num(hrs);document.getElementById('hValor').textContent=money(total);document.getElementById('hPend').textContent=db.horas.filter(x=>x.status==='Para aprovação').length;
+ let near=aniversarios();document.getElementById('hAniv').textContent=near.length;
+ document.getElementById('tHoras').innerHTML=table(['Colaborador','Data','Horas','Adicional','Valor estimado','Justificativa','Status','Ação'],rowsFor(db.horas,[x=>db.pessoas.find(p=>p.id===x.pessoa)?.nome||'Não encontrado',x=>x.data,x=>num(val(x.minutos)/60),x=>x.adicional+'%',x=>money(x.valor),x=>x.justificativa,x=>status(x.status)],'horas'));
+ let pending=db.compras.filter(x=>!['Entregue','Cancelado'].includes(x.status));document.getElementById('pendencias').innerHTML=pending.length?'<ul>'+pending.map(x=>`<li><b>${esc(x.item)}</b> — ${esc(x.status)}; responsável pela solicitação: ${esc(x.solicitante)}${x.prazo?' • prazo '+esc(x.prazo):''}</li>`).join('')+'</ul>':'Nenhuma pendência de compras registrada.';
+ document.getElementById('aniversarios').innerHTML=near.length?'<ul>'+near.map(x=>`<li>${esc(x.nome)} — ${x.dias===0?'Hoje':`em ${x.dias} dia(s)`} (${esc(x.nascimento.slice(5))})</li>`).join('')+'</ul>':'Nenhum aniversário nos próximos 30 dias.';
+}
+function aniversarios(){let now=new Date();return db.pessoas.filter(x=>x.nascimento).map(x=>{let [y,m,d]=x.nascimento.split('-').map(Number);let date=new Date(now.getFullYear(),m-1,d);let today=new Date(now.getFullYear(),now.getMonth(),now.getDate());if(date<today)date.setFullYear(now.getFullYear()+1);return {...x,dias:Math.round((date-today)/86400000)}}).filter(x=>x.dias<=30).sort((a,b)=>a.dias-b.dias)}
+function bind(id,arr,transform){document.getElementById(id).addEventListener('submit',e=>{e.preventDefault();let x=transform(formObj(e.target));x.id=idGen();arr.push(x);e.target.reset();save()})}
+function idGen(){return id()}
+bind('fCompra',db.compras,x=>x);
+bind('fDiesel',db.diesel,x=>({...x,litros:val(x.litros)}));
+bind('fCozinha',db.cozinha,x=>({...x,qtd:val(x.qtd)}));
+bind('fAlmox',db.almox,x=>({...x,qtd:val(x.qtd)}));
+bind('fPessoa',db.pessoas,x=>x);
+bind('fHora',db.horas,x=>{let [a,b]=[x.inicio.split(':').map(Number),x.fim.split(':').map(Number)];let mins=(b[0]*60+b[1])-(a[0]*60+a[1])-val(x.intervalo);if(mins<=0){alert('Confira os horários e o intervalo. O horário final precisa ser posterior ao inicial.');throw Error('horário inválido')}let hours=mins/60;let rate=val(x.valorhora);return {...x,minutos:mins,valor:rate*hours*(1+val(x.adicional)/100)}});
+document.getElementById('tabs').addEventListener('click',e=>{let b=e.target.closest('[data-page]');if(!b)return;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(x=>x.classList.toggle('hidden',x.id!==b.dataset.page));});
+document.addEventListener('click',e=>{let b=e.target.closest('[data-del]');if(!b)return;if(confirm('Excluir este registro? Esta ação não pode ser desfeita.')){db[b.dataset.del]=db[b.dataset.del].filter(x=>x.id!==b.dataset.id);save()}});
+document.getElementById('exportar').onclick=()=>download('backup-controle-administrativo-'+today()+'.json',JSON.stringify({version:1,exportadoEm:new Date().toISOString(),dados:db},null,2),'application/json');
+document.getElementById('importar').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let j=JSON.parse(await f.text());let d=j.dados||j;if(!confirm('A importação substituirá os dados atuais deste dispositivo. Deseja continuar?'))return;db={...empty,...d};save();alert('Backup importado.')}catch(err){alert('Arquivo inválido ou incompatível.')}e.target.value=''};
+document.getElementById('limpar').onclick=()=>{if(confirm('Tem certeza? Exporte o backup antes. Todos os registros locais serão apagados.')){db=structuredClone(empty);save()}};
+document.querySelectorAll('[data-csv]').forEach(b=>b.onclick=()=>{let k=b.dataset.csv;let arr=db[k]||[];if(!arr.length){alert('Não há registros para exportar.');return}let keys=[...new Set(arr.flatMap(Object.keys))];let csv=[keys.join(';'),...arr.map(x=>keys.map(k=>'"'+String(x[k]??'').replace(/"/g,'""')+'"').join(';'))].join('\r\n');download(k+'-'+today()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8')});
+function download(name,content,type){let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
+function today(){return new Date().toISOString().slice(0,10)}
+function net(){let n=document.getElementById('net');n.textContent=navigator.onLine?'Online':'Offline • dados locais';n.style.background=navigator.onLine?'#147d5066':'#a45b0866'}
+window.addEventListener('online',net);window.addEventListener('offline',net);net();render();
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body></html>

@@ -103,9 +103,8 @@ h1{font-size:23px;margin:8px 0 4px}h2{font-size:18px;margin:0 0 12px}h3{font-siz
 <footer>Controle Administrativo • protótipo inicial • mantenha cópias de segurança</footer>
 </main>
 <script>
-
-// CONFIGURAÇÃO DA SINCRONIZAÇÃO
-const API_URL = 'https://script.google.com/macros/s/AKfycbz9BcLGX1dSXE-aq7qTxKTVPI3VFSj0NLI3XdP2bLl9PH46vzuaGU-C100i0yFBFxWf1A/exec';
+// CONFIGURAÇÃO DA SINCRONIZAÇÃO (Atualizada com a sua URL nova)
+const API_URL = 'https://script.google.com/macros/s/AKfycbyDcdz6AEHcHYWQShchjubZSslX5HxdkJwt5AgDfk9H380eEEtzIO54Y1-ZRLO7d5uegw/exec';
 const MODULOS = ['compras','diesel','cozinha','almox','pessoas','horas'];
 let cloudReady = false;
 let cloudTimer = null;
@@ -142,7 +141,8 @@ async function enviarNuvem(){
     const n=document.getElementById('net');
     n.textContent='Envio solicitado';
   }catch(err){
-    document.getElementById('net').textContent='Falha no envio';
+    const n=document.getElementById('net');
+    if(n) n.textContent='Falha no envio';
   }
 }
 
@@ -160,15 +160,17 @@ async function iniciarSincronizacao(){
     MODULOS.forEach(k=>{if(Array.isArray(dados[k])) db[k]=dados[k]});
     localStorage.setItem(KEY,JSON.stringify(db));
     cloudReady=true;
-    document.getElementById('net').textContent='Conectado à nuvem';
+    const n=document.getElementById('net');
+    if(n) n.textContent='Conectado à nuvem';
     render();
   }catch(err){
     cloudReady=false;
-    document.getElementById('net').textContent='Nuvem indisponível • dados locais';
+    const n=document.getElementById('net');
+    if(n) n.textContent='Nuvem indisponível • dados locais';
   }
 }
 
-  const KEY='controle_administrativo_v1';
+const KEY='controle_administrativo_v1';
 const empty={compras:[],diesel:[],cozinha:[],almox:[],pessoas:[],horas:[]};
 let db=load();
 
@@ -228,3 +230,172 @@ function rowsFor(arr,fields,delType){
     fields.map(f=>`<td>${esc(f(x))}</td>`).join('')+
     `<td><button class="danger" data-del="${delType}" data-id="${x.id}">Excluir</button></td></tr>`);
 }
+
+// Controle de abas e renderização geral da interface
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click',e=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.page).classList.remove('hidden');
+  });
+});
+
+function render(){
+  // Métricas do painel
+  document.getElementById('mCompras').textContent = db.compras.filter(x=>x.status!=='Entregue'&&x.status!=='Cancelado').length;
+  document.getElementById('mDiesel').textContent = db.diesel.length;
+  document.getElementById('mEstoque').textContent = db.cozinha.length + db.almox.length;
+  document.getElementById('mPessoal').textContent = db.pessoas.length;
+
+  // Compras
+  document.getElementById('tCompras').innerHTML = table(
+    ['Solicitante','Setor','Data','Item','Qtd','Fornecedor','Valor','Status','Ações'],
+    rowsFor(db.compras, [x=>x.solicitante, x=>x.setor, x=>x.data, x=>x.item, x=>x.quantidade, x=>x.fornecedor, x=>money(x.valor), x=>status(x.status)], 'compras')
+  );
+
+  // Diesel
+  let dEnt=0, dSai=0;
+  db.diesel.forEach(x=>{
+    if(x.tipo==='entrada') dEnt+=val(x.litros);
+    else if(x.tipo==='saida') dSai+=val(x.litros);
+  });
+  document.getElementById('dEntradas').textContent = num(dEnt);
+  document.getElementById('dSaidas').textContent = num(dSai);
+  document.getElementById('dSaldo').textContent = num(dEnt - dSai);
+  document.getElementById('dMovs').textContent = db.diesel.length;
+  document.getElementById('tDiesel').innerHTML = table(
+    ['Data','Tipo','Litros','Equipamento','Responsável','Documento','Ações'],
+    rowsFor(db.diesel, [x=>x.data, x=>x.tipo, x=>num(x.litros), x=>x.equipamento, x=>x.responsavel, x=>x.documento], 'diesel')
+  );
+
+  // Cozinha
+  let cozMap={};
+  db.cozinha.forEach(x=>{
+    if(!cozMap[x.produto]) cozMap[x.produto]={qtd:0,un:x.unidade||''};
+    if(x.tipo==='entrada') cozMap[x.produto].qtd+=val(x.qtd);
+    else cozMap[x.produto].qtd-=val(x.qtd);
+  });
+  let cozRows = Object.entries(cozMap).map(([prod,obj])=>`<tr><td><b>${esc(prod)}</b></td><td>${num(obj.qtd)} ${esc(obj.un)}</td></tr>`);
+  document.getElementById('tCozinha').innerHTML = table(['Produto','Estoque calculado'], cozRows);
+  document.getElementById('tCozinhaHist').innerHTML = table(
+    ['Data','Tipo','Produto','Qtd','Unidade','Responsável','Ações'],
+    rowsFor(db.cozinha, [x=>x.data, x=>x.tipo, x=>x.produto, x=>num(x.qtd), x=>x.unidade, x=>x.responsavel], 'cozinha')
+  );
+
+  // Almoxarifado
+  let almMap={};
+  db.almox.forEach(x=>{
+    let k=x.item.toLowerCase();
+    if(!almMap[k]) almMap[k]={nome:x.item,qtd:0,un:x.unidade||''};
+    if(x.tipo==='entrada') almMap[k].qtd+=val(x.qtd);
+    else almMap[k].qtd-=val(x.qtd);
+  });
+  let almRows = Object.values(almMap).map(obj=>`<tr><td><b>${esc(obj.nome)}</b></td><td>${num(obj.qtd)} ${esc(obj.un)}</td></tr>`);
+  document.getElementById('tAlmoxSaldo').innerHTML = table(['Item','Saldo atual'], almRows);
+  document.getElementById('tAlmoxHist').innerHTML = table(
+    ['Data','Tipo','Item','Qtd','Unidade','Solicitante','Aplicação','Ações'],
+    rowsFor(db.almox, [x=>x.data, x=>x.tipo, x=>x.item, x=>num(x.qtd), x=>x.unidade, x=>x.responsavel, x=>x.aplicacao], 'almox')
+  );
+
+  // Pessoal e Horas
+  let sel=document.getElementById('selPessoa');
+  sel.innerHTML = db.pessoas.length ? db.pessoas.map(p=>`<option value="${esc(p.nome)}">${esc(p.nome)}</option>`).join('') : '<option value="">Cadastre um colaborador primeiro</option>';
+  
+  document.getElementById('tPessoas').innerHTML = table(
+    ['Nome','Setor','Nascimento','Telefone','Ações'],
+    rowsFor(db.pessoas, [x=>x.nome, x=>x.setor, x=>x.nascimento, x=>x.telefone], 'pessoas')
+  );
+
+  let hTot=0, hVal=0, hPend=0;
+  db.horas.forEach(x=>{
+    if(x.status==='Para aprovação') hPend++;
+    // cálculo estimado de horas
+    let [ih,im]=x.inicio.split(':').map(Number);
+    let [fh,fm]=x.fim.split(':').map(Number);
+    let mins=(fh*60+fm)-(ih*60+im)-val(x.intervalo);
+    if(mins>0){
+      let hs=mins/60;
+      hTot+=hs;
+      hVal+=hs*val(x.valorhora)*(1+val(x.adicional)/100);
+    }
+  });
+  document.getElementById('hTotal').textContent = num(hTot);
+  document.getElementById('hValor').textContent = money(hVal);
+  document.getElementById('hPend').textContent = hPend;
+  document.getElementById('hAniv').textContent = 0;
+
+  document.getElementById('tHoras').innerHTML = table(
+    ['Colaborador','Data','Início','Fim','Horas','Valor est.','Status','Justificativa','Ações'],
+    rowsFor(db.horas, [x=>x.pessoa, x=>x.data, x=>x.inicio, x=>x.fim, x=>'-', x=>status(x.status), x=>x.justificativa], 'horas')
+  );
+}
+
+// Eventos de envio de formulários
+['Compra','Diesel','Cozinha','Almox','Pessoa','Hora'].forEach(mod=>{
+  let f=document.getElementById('f'+mod);
+  if(f){
+    f.addEventListener('submit', e=>{
+      e.preventDefault();
+      let obj=formObj(f);
+      obj.id=id();
+      let key=mod.toLowerCase();
+      if(key==='pessoa') key='pessoas';
+      if(!db[key]) db[key]=[];
+      db[key].push(obj);
+      f.reset();
+      save();
+    });
+  }
+});
+
+// Delegação para exclusão de registros
+document.addEventListener('click', e=>{
+  if(e.target.dataset && e.target.dataset.del){
+    if(confirm('Deseja excluir este registro?')){
+      let t=e.target.dataset.del;
+      let i=e.target.dataset.id;
+      db[t]=db[t].filter(x=>x.id!==i);
+      save();
+    }
+  }
+});
+
+// Backup e limpeza
+document.getElementById('exportar').addEventListener('click', ()=>{
+  let blob=new Blob([JSON.stringify(db,null,2)],{type:'json'});
+  let a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='backup_controle_administrativo.json';
+  a.click();
+});
+
+document.getElementById('importar').addEventListener('change', e=>{
+  let file=e.target.files[0];
+  if(!file) return;
+  let r=new FileReader();
+  r.onload=ev=>{
+    try{
+      db=JSON.parse(ev.target.result);
+      save();
+      alert('Backup importado com sucesso!');
+    }catch(err){
+      alert('Arquivo inválido.');
+    }
+  };
+  r.readAsText(file);
+});
+
+document.getElementById('limpar').addEventListener('click', ()=>{
+  if(confirm('Tem certeza que deseja apagar todos os dados locais?')){
+    db=structuredClone(empty);
+    save();
+  }
+});
+
+// Inicialização da sincronização na abertura
+iniciarSincronizacao();
+render();
+</script>
+</body>
+</html>

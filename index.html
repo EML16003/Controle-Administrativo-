@@ -19,9 +19,9 @@ h1{font-size:23px;margin:8px 0 4px}h2{font-size:18px;margin:0 0 12px}h3{font-siz
 </style>
 </head>
 <body>
-<header><div class="head"><div><div class="brand">▦ Controle Administrativo</div><div style="font-size:12px;opacity:.8">Versão inicial • registros locais</div></div><span id="net" class="status">Verificando conexão…</span></div></header>
+<header><div class="head"><div><div class="brand">▦ Controle Administrativo</div><div style="font-size:12px;opacity:.8">Teste de sincronização • uso individual</div></div><span id="net" class="status">Verificando conexão…</span></div></header>
 <main class="wrap">
-<div class="notice"><b>Atenção:</b> esta primeira versão salva os dados neste navegador/dispositivo. Ainda não compartilha automaticamente dados com outros usuários nem sincroniza com a nuvem. Faça backups frequentes em <b>Backup e dados</b>.</div>
+<div class="notice"><b>Atenção:</b> esta versão está em fase de teste. Use apenas dados fictícios até validarmos a gravação na nuvem e implantarmos controles de acesso. Faça backups frequentes em <b>Backup e dados</b>.</div>
 <nav class="tabs" id="tabs">
 <button class="tab active" data-page="painel">Painel</button><button class="tab" data-page="compras">Cotações e pedidos</button><button class="tab" data-page="diesel">Diesel</button><button class="tab" data-page="cozinha">Cozinha</button><button class="tab" data-page="almox">Almoxarifado</button><button class="tab" data-page="pessoal">Pessoal e horas</button><button class="tab" data-page="backup">Backup e dados</button>
 </nav>
@@ -103,61 +103,67 @@ h1{font-size:23px;margin:8px 0 4px}h2{font-size:18px;margin:0 0 12px}h3{font-siz
 <footer>Controle Administrativo • protótipo inicial • mantenha cópias de segurança</footer>
 </main>
 <script>
-const KEY='controle_administrativo_v1';
-const empty={compras:[],diesel:[],cozinha:[],almox:[],pessoas:[],horas:[]};
-let db=load();
-function load(){try{return {...empty,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){return structuredClone(empty)}}
-function save(){localStorage.setItem(KEY,JSON.stringify(db));render()}
-function id(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-function val(n){return Number(n||0)}
-function money(n){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0)}
-function num(n){return new Intl.NumberFormat('pt-BR',{maximumFractionDigits:2}).format(n||0)}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function formObj(form){return Object.fromEntries(new FormData(form).entries())}
-function table(headers,rows){if(!rows.length)return '<div class="empty">Nenhum registro ainda.</div>';return '<table><thead><tr>'+headers.map(x=>'<th>'+x+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table>'}
-function status(s){let cls=/entregue|aprovada|paga|conclu/i.test(s)?'ok':/recus|cancel/i.test(s)?'bad':'wait';return `<span class="pill ${cls}">${esc(s)}</span>`}
-function rowsFor(arr,fields,delType){return arr.slice().reverse().map(x=>'<tr>'+fields.map(f=>`<td>${esc(f(x))}</td>`).join('')+`<td><button class="danger" data-del="${delType}" data-id="${x.id}">Excluir</button></td></tr>`)}
-function render(){
- document.getElementById('mCompras').textContent=db.compras.filter(x=>!['Entregue','Cancelado'].includes(x.status)).length;
- document.getElementById('mDiesel').textContent=db.diesel.length;document.getElementById('mEstoque').textContent=db.almox.length+db.cozinha.length;document.getElementById('mPessoal').textContent=db.pessoas.length;
- document.getElementById('tCompras').innerHTML=table(['Data','Solicitante','Item','Fornecedor','Valor','Status','Ação'],rowsFor(db.compras,[x=>x.data,x=>x.solicitante,x=>x.item,x=>x.fornecedor||'—',x=>money(val(x.valor)),x=>status(x.status)],'compras'));
- let ent=db.diesel.filter(x=>x.tipo==='entrada').reduce((a,x)=>a+val(x.litros),0),sai=db.diesel.filter(x=>x.tipo==='saida').reduce((a,x)=>a+val(x.litros),0);
- ['dEntradas','dSaidas','dSaldo','dMovs'].forEach((k,i)=>document.getElementById(k).textContent=[num(ent),num(sai),num(ent-sai),db.diesel.length][i]);
- document.getElementById('tDiesel').innerHTML=table(['Data','Tipo','Litros','Equipamento','Responsável','Documento','Ação'],rowsFor(db.diesel,[x=>x.data,x=>x.tipo==='entrada'?'Entrada':'Saída',x=>num(val(x.litros)),x=>x.equipamento,x=>x.responsavel,x=>x.documento],'diesel'));
- const kitchen={};db.cozinha.forEach(x=>{let k=x.produto.toLowerCase();if(!kitchen[k])kitchen[k]={produto:x.produto,unidade:x.unidade,entrada:0,saida:0};kitchen[k][x.tipo==='entrada'?'entrada':'saida']+=val(x.qtd)});
- document.getElementById('tCozinha').innerHTML=table(['Produto','Entradas','Consumo','Saldo','Unidade'],Object.values(kitchen).map(x=>`<tr><td>${esc(x.produto)}</td><td>${num(x.entrada)}</td><td>${num(x.saida)}</td><td>${num(x.entrada-x.saida)}</td><td>${esc(x.unidade)}</td></tr>`));
- document.getElementById('tCozinhaHist').innerHTML=table(['Data','Tipo','Produto','Quantidade','Responsável','Ação'],rowsFor(db.cozinha,[x=>x.data,x=>x.tipo==='entrada'?'Entrada':'Consumo',x=>x.produto,x=>num(val(x.qtd))+' '+(x.unidade||''),x=>x.responsavel],'cozinha'));
- const stock={};db.almox.forEach(x=>{let k=x.item.toLowerCase();if(!stock[k])stock[k]={item:x.item,unidade:x.unidade,entrada:0,saida:0,aplicacao:0};if(x.tipo==='entrada')stock[k].entrada+=val(x.qtd);else stock[k].saida+=val(x.qtd)});
- document.getElementById('tAlmoxSaldo').innerHTML=table(['Item','Entradas','Saídas/liberações','Saldo','Unidade'],Object.values(stock).map(x=>`<tr><td>${esc(x.item)}</td><td>${num(x.entrada)}</td><td>${num(x.saida)}</td><td>${num(x.entrada-x.saida)}</td><td>${esc(x.unidade)}</td></tr>`));
- document.getElementById('tAlmoxHist').innerHTML=table(['Data','Tipo','Item','Quantidade','Responsável','Aplicação','Ação'],rowsFor(db.almox,[x=>x.data,x=>x.tipo,x=>x.item,x=>num(val(x.qtd))+' '+(x.unidade||''),x=>x.responsavel,x=>x.aplicacao],'almox'));
- document.getElementById('tPessoas').innerHTML=table(['Colaborador','Setor/função','Nascimento','Telefone','Ação'],rowsFor(db.pessoas,[x=>x.nome,x=>x.setor,x=>x.nascimento,x=>x.telefone],'pessoas'));
- document.getElementById('selPessoa').innerHTML='<option value="">Selecione</option>'+db.pessoas.map(x=>`<option value="${x.id}">${esc(x.nome)}</option>`).join('');
- let hrs=db.horas.reduce((a,x)=>a+val(x.minutos)/60,0),total=db.horas.reduce((a,x)=>a+val(x.valor),0);
- document.getElementById('hTotal').textContent=num(hrs);document.getElementById('hValor').textContent=money(total);document.getElementById('hPend').textContent=db.horas.filter(x=>x.status==='Para aprovação').length;
- let near=aniversarios();document.getElementById('hAniv').textContent=near.length;
- document.getElementById('tHoras').innerHTML=table(['Colaborador','Data','Horas','Adicional','Valor estimado','Justificativa','Status','Ação'],rowsFor(db.horas,[x=>db.pessoas.find(p=>p.id===x.pessoa)?.nome||'Não encontrado',x=>x.data,x=>num(val(x.minutos)/60),x=>x.adicional+'%',x=>money(x.valor),x=>x.justificativa,x=>status(x.status)],'horas'));
- let pending=db.compras.filter(x=>!['Entregue','Cancelado'].includes(x.status));document.getElementById('pendencias').innerHTML=pending.length?'<ul>'+pending.map(x=>`<li><b>${esc(x.item)}</b> — ${esc(x.status)}; responsável pela solicitação: ${esc(x.solicitante)}${x.prazo?' • prazo '+esc(x.prazo):''}</li>`).join('')+'</ul>':'Nenhuma pendência de compras registrada.';
- document.getElementById('aniversarios').innerHTML=near.length?'<ul>'+near.map(x=>`<li>${esc(x.nome)} — ${x.dias===0?'Hoje':`em ${x.dias} dia(s)`} (${esc(x.nascimento.slice(5))})</li>`).join('')+'</ul>':'Nenhum aniversário nos próximos 30 dias.';
+
+// CONFIGURAÇÃO DA SINCRONIZAÇÃO
+const API_URL = 'https://script.google.com/macros/s/AKfycbz9BcLGX1dSXE-aq7qTxKTVPI3VFSj0NLI3XdP2bLl9PH46vzuaGU-C100i0yFBFxWf1A/exec';
+const MODULOS = ['compras','diesel','cozinha','almox','pessoas','horas'];
+let cloudReady = false;
+let cloudTimer = null;
+
+function carregarNuvem(){
+  return new Promise((resolve,reject)=>{
+    if(!API_URL.startsWith('https://script.google.com/')) {
+      reject(new Error('URL da API não configurada.'));
+      return;
+    }
+    const callback='__controleReceberNuvem';
+    const timeout=setTimeout(()=>{cleanup();reject(new Error('Tempo esgotado ao consultar a nuvem.'));},12000);
+    function cleanup(){
+      clearTimeout(timeout);
+      delete window[callback];
+      if(script.parentNode) script.parentNode.removeChild(script);
+    }
+    window[callback]=(res)=>{cleanup();resolve(res);};
+    const script=document.createElement('script');
+    script.src=API_URL+'?action=load&callback='+callback+'&t='+Date.now();
+    script.onerror=()=>{cleanup();reject(new Error('Não foi possível consultar a API.'));};
+    document.head.appendChild(script);
+  });
 }
-function aniversarios(){let now=new Date();return db.pessoas.filter(x=>x.nascimento).map(x=>{let [y,m,d]=x.nascimento.split('-').map(Number);let date=new Date(now.getFullYear(),m-1,d);let today=new Date(now.getFullYear(),now.getMonth(),now.getDate());if(date<today)date.setFullYear(now.getFullYear()+1);return {...x,dias:Math.round((date-today)/86400000)}}).filter(x=>x.dias<=30).sort((a,b)=>a.dias-b.dias)}
-function bind(id,arr,transform){document.getElementById(id).addEventListener('submit',e=>{e.preventDefault();let x=transform(formObj(e.target));x.id=idGen();arr.push(x);e.target.reset();save()})}
-function idGen(){return id()}
-bind('fCompra',db.compras,x=>x);
-bind('fDiesel',db.diesel,x=>({...x,litros:val(x.litros)}));
-bind('fCozinha',db.cozinha,x=>({...x,qtd:val(x.qtd)}));
-bind('fAlmox',db.almox,x=>({...x,qtd:val(x.qtd)}));
-bind('fPessoa',db.pessoas,x=>x);
-bind('fHora',db.horas,x=>{let [a,b]=[x.inicio.split(':').map(Number),x.fim.split(':').map(Number)];let mins=(b[0]*60+b[1])-(a[0]*60+a[1])-val(x.intervalo);if(mins<=0){alert('Confira os horários e o intervalo. O horário final precisa ser posterior ao inicial.');throw Error('horário inválido')}let hours=mins/60;let rate=val(x.valorhora);return {...x,minutos:mins,valor:rate*hours*(1+val(x.adicional)/100)}});
-document.getElementById('tabs').addEventListener('click',e=>{let b=e.target.closest('[data-page]');if(!b)return;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(x=>x.classList.toggle('hidden',x.id!==b.dataset.page));});
-document.addEventListener('click',e=>{let b=e.target.closest('[data-del]');if(!b)return;if(confirm('Excluir este registro? Esta ação não pode ser desfeita.')){db[b.dataset.del]=db[b.dataset.del].filter(x=>x.id!==b.dataset.id);save()}});
-document.getElementById('exportar').onclick=()=>download('backup-controle-administrativo-'+today()+'.json',JSON.stringify({version:1,exportadoEm:new Date().toISOString(),dados:db},null,2),'application/json');
-document.getElementById('importar').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let j=JSON.parse(await f.text());let d=j.dados||j;if(!confirm('A importação substituirá os dados atuais deste dispositivo. Deseja continuar?'))return;db={...empty,...d};save();alert('Backup importado.')}catch(err){alert('Arquivo inválido ou incompatível.')}e.target.value=''};
-document.getElementById('limpar').onclick=()=>{if(confirm('Tem certeza? Exporte o backup antes. Todos os registros locais serão apagados.')){db=structuredClone(empty);save()}};
-document.querySelectorAll('[data-csv]').forEach(b=>b.onclick=()=>{let k=b.dataset.csv;let arr=db[k]||[];if(!arr.length){alert('Não há registros para exportar.');return}let keys=[...new Set(arr.flatMap(Object.keys))];let csv=[keys.join(';'),...arr.map(x=>keys.map(k=>'"'+String(x[k]??'').replace(/"/g,'""')+'"').join(';'))].join('\r\n');download(k+'-'+today()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8')});
-function download(name,content,type){let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
-function today(){return new Date().toISOString().slice(0,10)}
-function net(){let n=document.getElementById('net');n.textContent=navigator.onLine?'Online':'Offline • dados locais';n.style.background=navigator.onLine?'#147d5066':'#a45b0866'}
-window.addEventListener('online',net);window.addEventListener('offline',net);net();render();
-if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
-</script>
-</body></html>
+
+async function enviarNuvem(){
+  if(!cloudReady) return;
+  const payload={};
+  MODULOS.forEach(k=>payload[k]=db[k]||[]);
+  const body=new URLSearchParams();
+  body.set('payload',JSON.stringify(payload));
+  try{
+    await fetch(API_URL,{method:'POST',mode:'no-cors',body});
+    const n=document.getElementById('net');
+    n.textContent='Envio solicitado';
+  }catch(err){
+    document.getElementById('net').textContent='Falha no envio';
+  }
+}
+
+function agendarEnvioNuvem(){
+  if(!cloudReady) return;
+  clearTimeout(cloudTimer);
+  cloudTimer=setTimeout(enviarNuvem,1200);
+}
+
+async function iniciarSincronizacao(){
+  try{
+    const resposta=await carregarNuvem();
+    if(!resposta.sucesso) throw new Error('Resposta inválida da API.');
+    const dados=resposta.dados||{};
+    MODULOS.forEach(k=>{if(Array.isArray(dados[k])) db[k]=dados[k]});
+    localStorage.setItem(KEY,JSON.stringify(db));
+    cloudReady=true;
+    document.getElementById('net').textContent='Conectado à nuvem';
+    render();
+  }catch(err){
+    cloudReady=false;
+    document.getElementById('net').textContent='Nuvem indisponível • dados locais';
+  }
+}

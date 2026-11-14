@@ -167,3 +167,64 @@ async function iniciarSincronizacao(){
     document.getElementById('net').textContent='Nuvem indisponível • dados locais';
   }
 }
+
+  const KEY='controle_administrativo_v1';
+const empty={compras:[],diesel:[],cozinha:[],almox:[],pessoas:[],horas:[]};
+let db=load();
+
+function load(){
+  try{
+    return {...empty,...JSON.parse(localStorage.getItem(KEY)||'{}')};
+  }catch(e){
+    return structuredClone(empty);
+  }
+}
+
+function save(){
+  localStorage.setItem(KEY,JSON.stringify(db));
+  render();
+  agendarEnvioNuvem();
+}
+
+function id(){
+  return Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+}
+
+function val(n){return Number(n||0)}
+
+function money(n){
+  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0);
+}
+
+function num(n){
+  return new Intl.NumberFormat('pt-BR',{maximumFractionDigits:2}).format(n||0);
+}
+
+function esc(s){
+  return String(s??'').replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function formObj(form){
+  return Object.fromEntries(new FormData(form).entries());
+}
+
+function table(headers,rows){
+  if(!rows.length)return '<div class="empty">Nenhum registro ainda.</div>';
+  return '<table><thead><tr>'+
+    headers.map(x=>'<th>'+x+'</th>').join('')+
+    '</tr></thead><tbody>'+rows.join('')+'</tbody></table>';
+}
+
+function status(s){
+  let cls=/entregue|aprovada|paga|conclu/i.test(s)?'ok':
+    /recus|cancel/i.test(s)?'bad':'wait';
+  return `<span class="pill ${cls}">${esc(s)}</span>`;
+}
+
+function rowsFor(arr,fields,delType){
+  return arr.slice().reverse().map(x=>'<tr>'+
+    fields.map(f=>`<td>${esc(f(x))}</td>`).join('')+
+    `<td><button class="danger" data-del="${delType}" data-id="${x.id}">Excluir</button></td></tr>`);
+}
